@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cleany"
+version = "0.0.1"
+requires-python = ">= 3.6"
+description = "Code for cleaning astronomy images, removing stars and other background signal, leaving just transients (mostly Solar System Objects)"
+authors = [{ "name" = "Mike Alexandersen", "email" = "mike.alexandersen@cfa.harvard.edu" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "numpy<2.0.0",
+    "astropy",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-timeout"
+]
+
+[project.urls]
+Homepage = "https://github.com/Mikea1985/cleany"
+
