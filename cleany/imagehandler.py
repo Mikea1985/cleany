@@ -8,28 +8,16 @@
 # -----------------------------------------------------------------------------
 # Third party imports
 # -----------------------------------------------------------------------------
-import os
-import gc
-import sys
-import copy
 import numpy as np
-from datetime import datetime
 from astropy import wcs
 from astropy.io import fits
-from astropy.nddata import CCDData
-from ccdproc import wcs_project
-
-
-# -----------------------------------------------------------------------------
-# Any local imports
-# -----------------------------------------------------------------------------
-sys.path.append(os.path.dirname(os.path.dirname(
-                os.path.realpath(__file__))))
-
+from datetime import datetime
+from typing import Any, Dict, List
 
 # -----------------------------------------------------------------------------
 # Various class definitions for *data import * in cleany
 # -----------------------------------------------------------------------------
+
 
 class OneImage():
     '''
@@ -56,7 +44,11 @@ class OneImage():
     # I get why an object should have at least two public methods in order to
     # not be pointless, but it's an annoying warning during dev. Turning off.
 
-    def __init__(self, filename=None, extno=0, verbose=False, **kwargs):
+    def __init__(self,
+                 filename: str = None,
+                 extno: int = 0,
+                 verbose: bool = False,
+                 **kwargs) -> None:
         '''
         inputs:
         -------
@@ -70,7 +62,6 @@ class OneImage():
                                       - ('s','m','h','d' or float seconds/unit)
         MJD_START      - str OR float - MJD at start of exposure
                                       - (keyword or value)
-        GAIN           - str OR float - Gain value (keyword or value)
         FILTER         - str          - Filter name (keyword or '-name')
         NAXIS1         - str OR int   - Number of pixels along axis 1
         NAXIS2         - str OR int   - Number of pixels along axis 2
@@ -133,7 +124,11 @@ class DataEnsemble():
     # I get why an object should have at least two public methods in order to
     # not be pointless, but it's an annoying warning during dev. Turning off.
 
-    def __init__(self, filename=None, extno=0, verbose=False, **kwargs):
+    def __init__(self,
+                 filename: List[str] = None,
+                 extno: int = 0,
+                 verbose: bool = False,
+                 **kwargs):
         '''
         inputs:
         -------
@@ -147,7 +142,6 @@ class DataEnsemble():
                                       - ('s','m','h','d' or float seconds/unit)
         MJD_START      - str OR float - MJD at start of exposure
                                       - (keyword or value)
-        GAIN           - str OR float - Gain value (keyword or value)
         FILTER         - str          - Filter name (keyword or '-name')
         NAXIS1         - str OR int   - Number of pixels along axis 1
         NAXIS2         - str OR int   - Number of pixels along axis 2
@@ -176,7 +170,9 @@ class DataEnsemble():
             self.WCS = None
             self.header = None
 
-    def read_fits_files(self, verbose=False, **kwargs):
+    def read_fits_files(self,
+                        verbose: bool = False,
+                        **kwargs) -> None:
         '''
         Read in the files defined in self.filename
         from extension[s] in self.extno.
@@ -211,7 +207,9 @@ class DataEnsemble():
 # No need to over-complicate things.
 # -------------------------------------------------------------------------
 
-def save_fits(DataEnsembleObject, filename='data.fits', verbose=True):
+def save_fits(DataEnsembleObject: DataEnsemble,
+              filename: str='data.fits',
+              verbose: bool=True):
     '''
     Save some data to [a] fits file[s].
 
@@ -251,7 +249,9 @@ def save_fits(DataEnsembleObject, filename='data.fits', verbose=True):
     print('\nDone!')
 
 
-def readOneImageAndHeader(filename=None, extno=0, verbose=False,
+def readOneImageAndHeader(filename:str = None,
+                          extno: int = 0,
+                          verbose: bool = False,
                           **kwargs):
     '''
     Reads in a fits file (or a given extension of one).
@@ -269,7 +269,6 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
                                   - ('s','m','h','d' or float seconds/unit)
     MJD_START      - str OR float - MJD at start of exposure
                                   - (keyword or value)
-    GAIN           - str OR float - Gain value (keyword or value)
     FILTER         - str          - Filter name (keyword or '-name')
     NAXIS1         - str OR int   - Number of pixels along axis 1
     NAXIS2         - str OR int   - Number of pixels along axis 2
@@ -297,7 +296,6 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
     EXPTIME         - float      - Exposure time in seconds
     MJD_START       - float      - MJD at start of exposure
     MJD_MID         - float      - MJD at centre of exposure
-    GAIN            - float      - Gain value
     FILTER          - str        - Filter name
     NAXIS1          - int        - Number of pixels along axis 1
     NAXIS2          - int        - Number of pixels along axis 2
@@ -310,7 +308,6 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
     # Define default keyword names
     header_keywords = {'EXPTIME': 'EXPTIME',      # Exposure time [s]
                        'MJD_START': 'MJD-STR',    # MJD at start
-                       'GAIN': 'GAINEFF',         # Gain value
                        'FILTER': 'FILTER',        # Filter name
                        'NAXIS1': 'NAXIS1',        # Pixels along axis1
                        'NAXIS2': 'NAXIS2',        # Pixels along axis2
@@ -318,7 +315,6 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
                        }
     header_comments = {'EXPTIME': 'Exposure time [s]',
                        'MJD_START': 'MJD at start of exposure',
-                       'GAIN': 'Gain value',
                        'FILTER': 'Filter letter',
                        'NAXIS1': 'Pixels along axis1',
                        'NAXIS2': 'Pixels along axis2',
@@ -353,34 +349,34 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
         data = data[xycuts[2]:xycuts[3], xycuts[0]:xycuts[1]]
         # CRPIX1
         header['OLD_CRPIX1'] = (header['CRPIX1'], header.comments['CRPIX1'])
-        header['COMMENT'] = (f'OLD_CRPIX1 added by SHIFTY'
+        header['COMMENT'] = (f'OLD_CRPIX1 added by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'OLD_CRPIX1 contains old value of CRPIX1')
         header['CRPIX1'] -= xycuts[0]
         # CRPIX2
         header['OLD_CRPIX2'] = (header['CRPIX2'], header.comments['CRPIX2'])
-        header['COMMENT'] = (f'OLD_CRPIX2 added by SHIFTY'
+        header['COMMENT'] = (f'OLD_CRPIX2 added by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'OLD_CRPIX2 contains old value of CRPIX2')
         header['CRPIX2'] -= xycuts[2]
         # NAXIS1
         header['OLD_NAXIS1'] = (header['NAXIS1'],
                                 header.comments['NAXIS1'])
-        header['COMMENT'] = (f'OLD_NAXIS1 added by SHIFTY'
+        header['COMMENT'] = (f'OLD_NAXIS1 added by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'OLD_NAXIS1 contains old value of NAXIS1')
         header['NAXIS1'] = xycuts[1] - xycuts[0]
-        header['COMMENT'] = (f'NAXIS1 updated by SHIFTY'
+        header['COMMENT'] = (f'NAXIS1 updated by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'NAXIS1 adjusted for xycut')
         # NAXIS2
         header['OLD_NAXIS2'] = (header['NAXIS2'],
                                 header.comments['NAXIS2'])
-        header['COMMENT'] = (f'OLD_NAXIS2 added by SHIFTY'
+        header['COMMENT'] = (f'OLD_NAXIS2 added by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'OLD_NAXIS2 contains old value of NAXIS2')
         header['NAXIS2'] = xycuts[3] - xycuts[2]
-        header['COMMENT'] = (f'NAXIS2 updated by SHIFTY'
+        header['COMMENT'] = (f'NAXIS2 updated by CLEANY'
                              f' at {str(datetime.today())[:19]}')
         header['COMMENT'] = (f'NAXIS2 adjusted for xycut')
 
@@ -450,19 +446,19 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
                                float(_find_key_value(header, header0, use)))
         if verbose:
             print(key_values.keys())
-        header[f'SHIFTY_{key}'] = (key_values[key], header_comments[key])
-        header['COMMENT'] = (f'SHIFTY_{key} added by SHIFTY'
+        header[f'CLEANY_{key}'] = (key_values[key], header_comments[key])
+        header['COMMENT'] = (f'CLEANY_{key} added by CLEANY'
                              f' at {str(datetime.today())[:19]}')
-        header['COMMENT'] = f'SHIFTY_{key} derived from {use}'
+        header['COMMENT'] = f'CLEANY_{key} derived from {use}'
 
     # Also define the middle of the exposure:
     key_values['MJD_MID'] = (key_values['MJD_START'] +
                              key_values['EXPTIME'] / (86400 * 2))
-    header[f'SHIFTY_MJD_MID'] = (key_values['MJD_MID'],
+    header[f'CLEANY_MJD_MID'] = (key_values['MJD_MID'],
                                  'MJD at middle of exposure')
-    header['COMMENT'] = (f'SHIFTY_MJD_MID added by SHIFTY'
+    header['COMMENT'] = (f'CLEANY_MJD_MID added by CLEANY'
                          f' at {str(datetime.today())[:19]}')
-    header['COMMENT'] = (f'SHIFTY_MJD_MID derived from '
+    header['COMMENT'] = (f'CLEANY_MJD_MID derived from '
                          f'{header_keywords["MJD_START"]} '
                          f'and {header_keywords["EXPTIME"]}')
 
@@ -470,7 +466,7 @@ def readOneImageAndHeader(filename=None, extno=0, verbose=False,
     return data, header, header0, wcs.WCS(header), header_keywords, key_values
 
 
-def _find_key_value(header1, header2, key):
+def _find_key_value(header1: Dict[str, Any], header2: Dict[str, Any], key: str):
     """
     First checks extension header for keyword; if fails, checks main header.
     This is neccessary because some telescopes put things like the EXPTIME
